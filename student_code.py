@@ -128,6 +128,61 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact])
         ####################################################
         # Student code goes here
+        if isinstance(fact, Fact) and fact in self.facts:
+            factindex = self.facts.index(fact)
+            factorrule = self.facts[factindex]
+            if self.facts[factindex].asserted == True and not factorrule.supported_by:
+                    
+                for i in factorrule.supports_facts:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+                
+                for i in factorrule.supports_rules:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+                
+                self.facts.remove(self.facts[factindex])
+
+    def kb_retract_helper(self, factorrule):
+        if not factorrule: return
+        if isinstance(factorrule, Fact):
+            if (not factorrule.asserted) and (not factorrule.supported_by):
+
+                for i in factorrule.supports_facts:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+
+                for i in factorrule.supports_rules:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+
+                self.facts.remove(factorrule)
+                
+        elif isinstance(factorrule, Rule):
+            if (not factorrule.asserted) and (not factorrule.supported_by):
+
+                for i in factorrule.supports_facts:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+
+                for i in factorrule.supports_rules:
+                    for j in i.supported_by:
+                        if factorrule in j:
+                            i.supported_by.remove(j)
+                    self.kb_retract_helper(i)
+
+                self.rules.remove(factorrule)
+
         
 
 class InferenceEngine(object):
@@ -146,3 +201,42 @@ class InferenceEngine(object):
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+        binding = match(rule.lhs[0], fact.statement)
+        a = [fact, rule]
+        
+        if binding:
+            if len(rule.lhs) == 1:
+                
+                newfact = Fact(instantiate(rule.rhs, binding))
+                
+                if newfact not in kb.facts:
+                    
+                    newfact.asserted = False
+                    newfact.supported_by.append(a)
+                    kb.kb_add(newfact)
+                
+                    factindex = kb.facts.index(fact)
+                    kb.facts[factindex].supports_facts.append(newfact)
+                
+                    ruleindex = kb.rules.index(rule)
+                    kb.rules[ruleindex].supports_facts.append(newfact)
+            
+            elif len(rule.lhs) > 1:
+                
+                llhs = []
+                
+                for i in range(1,len(rule.lhs)):
+                    add = instantiate(rule.lhs[i], binding)
+                    llhs.append(add)
+                
+                newrule = Rule([llhs,instantiate(rule.rhs, binding)])
+                newrule.supported_by.append(a)
+                newrule.asserted = False
+                
+                fact.supports_rules.append(newrule)
+                rule.supports_rules.append(newrule)
+                kb.kb_add(newrule)
+
+
+
+

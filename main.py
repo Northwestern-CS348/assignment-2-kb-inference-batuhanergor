@@ -70,6 +70,8 @@ class KBTest(unittest.TestCase):
         print(' Asking if', ask1)
         answer = self.KB.kb_ask(ask1)
         self.assertEqual(str(answer[0]), "?X : bing")
+    
+
 
 
 def pprint_justification(answer):
